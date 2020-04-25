@@ -1,4 +1,4 @@
-# Encryption-In-Transit
+# Data Encryption-In-Transit
 
 Data in transit, or data in motion, is nothing but data actively moving from one location to another such as across the internet or through a private network.
 
