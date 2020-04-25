@@ -32,8 +32,6 @@ It has been for several years, TLS 1.2 is the most current defined version of th
 ## Server-Side Changes 
 
 ###	Registry Changes for Enabling TLS 1.2 protocol at the OS Level:
-[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2]
-
 [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Client]
 "DisabledByDefault"=dword:00000000
 "Enabled"=dword:00000001
@@ -44,36 +42,65 @@ It has been for several years, TLS 1.2 is the most current defined version of th
 
 #### Explanation of the subkey specified in the above mentioned registry hive.
 
-Subkey | Description | Value 
---- | --- | --- | --- |--- |--- 
-Client | Controls the use of TLS 1.2 on the client | 1 (Enabled)
-Server | Controls the use of TLS 1.2 on the server | 1 (Enabled)
-DisabledByDefault | Flag to disable TLS 1.2 by default | 1 (Enabled)
+Subkey | Description | Value |
+--- | --- | --- |
+Client | Controls the use of TLS 1.2 on the client | 1 (Enabled) |
+Server | Controls the use of TLS 1.2 on the server | 1 (Enabled) |
+DisabledByDefault | Flag to disable TLS 1.2 by default | 1 (Enabled) |
 
 ###	Registry Changes required at the SQL Server level:
-
-The following configuration methods performed to verify the SQL connections to be encrypted are:
-1.	Self-Signed Certificate Configuration
-2.	CA Certificate Configuration for SQL Server 
-
-1.	Self-Signed Certificate Configuration:
-
-The following change is introduced to make sure the connections are encrypted for both Windows & SQL logins.
-
 [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL12.MSSQLSERVER\MSSQLServer\SuperSocketNetLib]
 "ForceEncryption"=dword:00000001
 
+This registry change will make sure the connections are encrypted for both Windows & SQL logins.
+
 #### Explanation of the subkey specified in the above mentioned registry hive.
 
-Subkey | Description | Value 
---- | --- | --- | --- |--- |--- 
-ForceEncryption | All client connections to all services on the server are encrypted | 1 (Enabled)
+Subkey | Description | Value |
+--- | --- | --- |
+ForceEncryption | All client connections to all services on the server are encrypted | 1 (Enabled) |
 
 When enabling the Force Encryption to YES, individual SQL server instances will be encrypted. With this change, SQL Server will use self-signed certificate without CA.
 
-2.	CA Certificate Configuration for SQL Server:
+#### The following configuration methods performed to verify the SQL connections to be encrypted are:
 
-There are certain steps performed to configure SQL Server to use available Sensis certificate and verified the communication between client and server are encrypted. 
+1.	Self-Signed Certificate Configuration:
+When we set Force Encryption to YES, SQL Server will use self-signed certificate without CA.
+
+2.	CA Certificate Configuration for SQL Server:
+There are certain steps performed to configure SQL Server to use available CA Certificate and verified the communication between client and server are encrypted. 
+
+## Transport Layer Security (TLS) Best practices with the .NET Framework:
+To ensure .NET Framework applications remain secure, the TLS version should not be hardcoded. .NET Framework applications should use the TLS version the operating system (OS) supports.
+
+This document targets developers who are:
+
+1. Directly using the System.Net APIs (for example, System.Net.Http.HttpClient and System.Net.Security.SslStream).
+2. Directly using WCF clients and services using the System.ServiceModel namespace.
+
+#### Recommendations:
+Target .NET Framework 4.7 or later versions on your apps. Target .NET Framework 4.7.1 or later versions on your WCF apps.
+Do not specify the TLS version. Configure your code to let the OS decide on the TLS version.
+Perform a thorough code audit to verify you're not specifying a TLS or SSL version.
+
+### For TCP sockets networking
+SslStream, using .NET Framework 4.7 and later versions, defaults to the OS choosing the best security protocol and version. To get the default OS best choice, if possible, don't use the method overloads of SslStream that take an explicit SslProtocols parameter. Otherwise, pass SslProtocols.None. We recommend that you don't use Default; setting SslProtocols.Default forces the use of SSL 3.0 /TLS 1.0 and prevents TLS 1.2.
+
+### For WCF TCP transport using transport security with certificate credentials
+WCF uses the same networking stack as the rest of the .NET Framework.
+If you are targeting 4.7.1, WCF is configured to allow the OS to choose the best security protocol by default unless explicitly configured:
+
+1. In your application configuration file, Or
+2. In your application in the source code.
+
+By default, .NET Framework 4.7 and later versions is configured to use TLS 1.2 and allows connections using TLS 1.1 or TLS 1.0. Configure WCF to allow the OS to choose the best security protocol by configuring your binding to use SslProtocols.None. This can be set on SslProtocols. SslProtocols.None can be accessed from Transport. NetTcpSecurity.Transport can be accessed from Security.
+#### If you're using a custom binding:
+Configure WCF to allow the OS to choose the best security protocol by setting SslProtocols to use SslProtocols.None.
+Or configure the protocol used with the configuration path system.serviceModel/bindings/customBinding/binding/sslStreamSecurity:sslProtocols.
+If you're not using a custom binding and you're setting your WCF binding using configuration, set the protocol used with the configuration path system.serviceModel/bindings/netTcpBinding/binding/security/transport:sslProtocols.
+
+### For WCF Message Security with certificate credentials
+.NET Framework 4.7 and later versions by default uses the protocol specified in the SecurityProtocol property. When the AppContextSwitch Switch.System.ServiceModel.DisableUsingServicePointManagerSecurityProtocols is set to true, WCF chooses the best protocol, up to TLS 1.0.
 
 ## Testing with TLS 1.2+
 
