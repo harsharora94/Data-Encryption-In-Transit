@@ -79,8 +79,8 @@ This document targets developers who are:
 2. Directly using WCF clients and services using the System.ServiceModel namespace.
 
 #### Recommendations:
-Target .NET Framework 4.7 or later versions on your apps. Target .NET Framework 4.7.1 or later versions on your WCF apps.
-Do not specify the TLS version. Configure your code to let the OS decide on the TLS version.
+Target .NET Framework 4.7 or later versions on our apps. Target .NET Framework 4.7.1 or later versions on our WCF apps.
+Do not specify the TLS version. Configure our code to let the OS decide on the TLS version.
 Perform a thorough code audit to verify you're not specifying a TLS or SSL version.
 
 ### For TCP sockets networking
@@ -90,21 +90,76 @@ SslStream, using .NET Framework 4.7 and later versions, defaults to the OS choos
 WCF uses the same networking stack as the rest of the .NET Framework.
 If you are targeting 4.7.1, WCF is configured to allow the OS to choose the best security protocol by default unless explicitly configured:
 
-1. In your application configuration file, Or
-2. In your application in the source code.
+1. In our application configuration file, Or
+2. In our application in the source code.
 
-By default, .NET Framework 4.7 and later versions is configured to use TLS 1.2 and allows connections using TLS 1.1 or TLS 1.0. Configure WCF to allow the OS to choose the best security protocol by configuring your binding to use SslProtocols.None. This can be set on SslProtocols. SslProtocols.None can be accessed from Transport. NetTcpSecurity.Transport can be accessed from Security.
-#### If you're using a custom binding:
+By default, .NET Framework 4.7 and later versions is configured to use TLS 1.2 and allows connections using TLS 1.1 or TLS 1.0. Configure WCF to allow the OS to choose the best security protocol by configuring our binding to use SslProtocols.None. This can be set on SslProtocols. SslProtocols.None can be accessed from Transport. NetTcpSecurity.Transport can be accessed from Security.
+#### If we're using a custom binding:
 Configure WCF to allow the OS to choose the best security protocol by setting SslProtocols to use SslProtocols.None.
 Or configure the protocol used with the configuration path system.serviceModel/bindings/customBinding/binding/sslStreamSecurity:sslProtocols.
-If you're not using a custom binding and you're setting your WCF binding using configuration, set the protocol used with the configuration path system.serviceModel/bindings/netTcpBinding/binding/security/transport:sslProtocols.
+If we're not using a custom binding and we're setting our WCF binding using configuration, set the protocol used with the configuration path system.serviceModel/bindings/netTcpBinding/binding/security/transport:sslProtocols.
 
 ### For WCF Message Security with certificate credentials
 .NET Framework 4.7 and later versions by default uses the protocol specified in the SecurityProtocol property. When the AppContextSwitch Switch.System.ServiceModel.DisableUsingServicePointManagerSecurityProtocols is set to true, WCF chooses the best protocol, up to TLS 1.0.
 
+## If an app targets .NET Framework 4.7 or later versions
+Followings are the sections by which we can audit our code to verify that we're not setting a specific TLS or SSL version:
+
+### For .NET Framework 4.6 - 4.6.2 and not WCF
+Set the DontEnableSystemDefaultTlsVersions AppContext switch to false. See Configuring security via AppContext switches.
+
+### For WCF using .NET Framework 4.6 - 4.6.2 using TCP transport security with Certificate Credentials
+We are required to install the latest OS patches and security updates (if applicable).
+The WCF framework automatically chooses the highest protocol available up to TLS 1.2 unless you explicitly configure a protocol version. For more information, see the preceding section For WCF TCP transport using transport security with certificate credentials.
+
+### For .NET Framework 3.5 - 4.5.2 and not WCF
+It is recommended to upgrade the app to .NET Framework 4.7 or later versions. If we cannot upgrade, take the following steps.
+
+Set the SchUseStrongCrypto and SystemDefaultTlsVersions registry keys to 1. See Configuring security via the Windows Registry. The .NET Framework version 3.5 supports the SchUseStrongCrypto flag only when an explicit TLS value is passed.
+
+### For .NET Framework 3.5, we are required to install a hot patch so that TLS 1.2 can be specified by our program:
+
+[KB3154518](https://support.microsoft.com/kb/3154518) | Reliability Rollup HR-1605 - Support for TLS System Default Versions included in the .NET Framework 3.5.1 on Windows 7 SP1 and Server 2008 R2 SP1 |
+--- | --- |
+[KB3154519](https://support.microsoft.com/kb/3154519) | Reliability Rollup HR-1605 - Support for TLS System Default Versions included in the .NET Framework 3.5 on Windows Server 2012 |
+[KB3154520](https://support.microsoft.com/kb/3154520) | Reliability Rollup HR-1605 -Support for TLS System Default Versions included in the .NET Framework 3.5 on Windows 8.1 and Windows Server 2012 R2
+[KB3156421](https://support.microsoft.com/kb/3156421) | 1605 Hotfix rollup 3154521 for the .NET Framework 4.5.2 and 4.5.1 on Windows
+
+### For WCF using .NET Framework 3.5 - 4.5.2 using TCP transport security with Certificate Credentials
+These versions of the WCF framework are hardcoded to use values SSL 3.0 and TLS 1.0. These values cannot be changed. We are supposed to update and retarget to NET Framework 4.6 or later versions to use TLS 1.1 and 1.2.
+
+### If an app targets .NET Framework 3.5
+We must explicitly set a security protocol instead of letting .NET or the OS pick the security protocol, add SecurityProtocolTypeExtensions and SslProtocolsExtension enumerations to our code. SecurityProtocolTypeExtensions and SslProtocolsExtension include values for Tls12, Tls11, and the SystemDefault value. For more information, see Support for TLS System Default Versions included in .NET Framework 3.5 on Windows 8.1 and Windows Server 2012 R2.
+
+### For .NET Framework 4.6 or later versions (Required to configure security via AppContext switches)
+The AppContext switches described in this section are relevant if our app targets, or runs on, .NET Framework 4.6 or later versions. Whether by default, or by setting them explicitly, the switches should be false if possible. If you want to configure security via one or both switches, then don't specify a security protocol value in our code; doing so would override the switch(es).
+
+The switches have the same effect whether you're doing HTTP networking (ServicePointManager) or TCP sockets networking (SslStream).
+
+Switch.System.Net.DontEnableSchUseStrongCrypto
+A value of false for Switch.System.Net.DontEnableSchUseStrongCrypto causes our app to use strong cryptography. A value of false for DontEnableSchUseStrongCrypto uses more secure network protocols (TLS 1.2, TLS 1.1, and TLS 1.0) and blocks protocols that are not secure. For more info, see The SCH_USE_STRONG_CRYPTO flag. A value of true disables strong cryptography for our app.
+
+#### If an app targets .NET Framework 4.6 or later versions, this switch defaults to false. That's a secure default, which we recommend. If an app runs on .NET Framework 4.6, but targets an earlier version, the switch defaults to true. In that case, you should explicitly set it to false.
+
+DontEnableSchUseStrongCrypto should only have a value of true if you need to connect to legacy services that don't support strong cryptography and can't be upgraded.
+Switch.System.Net.DontEnableSystemDefaultTlsVersions
+A value of false for Switch.System.Net.DontEnableSystemDefaultTlsVersions causes an app to allow the operating system to choose the protocol. A value of true causes an app to use protocols picked by the .NET Framework.
+
+#### If an app targets .NET Framework 4.7 or later versions, this switch defaults to false. That's a secure default that we recommend. If an app runs on .NET Framework 4.7 or later versions, but targets an earlier version, the switch defaults to true. In that case, you should explicitly set it to false.
+
+Switch.System.ServiceModel.DisableUsingServicePointManagerSecurityProtocols
+A value of false for Switch.System.ServiceModel.DisableUsingServicePointManagerSecurityProtocols causes an application to use the value defined in ServicePointManager.SecurityProtocols for message security using certificate credentials. A value of true uses the highest protocol available, up to TLS1.0
+
+#### For applications targeting .NET Framework 4.7 and later versions, this value defaults to false. For applications targeting .NET Framework 4.6.2 and earlier, this value defaults to true.
+
+Switch.System.ServiceModel.DontEnableSystemDefaultTlsVersions
+A value of false for Switch.System.ServiceModel.DontEnableSystemDefaultTlsVersions sets the default configuration to allow the operating system to choose the protocol. A value of true sets the default to the highest protocol available, up to TLS1.2.
+
+#### For applications targeting .NET Framework 4.7.1 and later versions, this value defaults to false. For applications targeting .NET Framework 4.7 and earlier, this value defaults to true.
+
 ## Testing with TLS 1.2+
 
-Following the fixes recommended in the section above, products should be regression-tested for protocol negotiation errors and compatibility with other operating systems in your enterprise.  
+Following the fixes recommended in the section above, products should be regression-tested for protocol negotiation errors and compatibility with other operating systems.  
 
 1. The most common issue in this regression testing will be a TLS negotiation failure due to a client connection attempt from an operating system or browser that does not support TLS 1.2.  For example, a Vista client will fail to negotiate TLS with a server configured for TLS 1.2+ as Vista’s maximum supported TLS version is 1.0.  That client should be either upgraded or decommissioned in a TLS 1.2+ environment.
 2. Products using certificate-based Mutual TLS authentication may require additional regression testing as the certificate-selection code associated with TLS 1.0 was less expressive than that for TLS 1.2.  
