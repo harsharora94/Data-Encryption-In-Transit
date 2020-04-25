@@ -125,6 +125,18 @@ Set the SchUseStrongCrypto and SystemDefaultTlsVersions registry keys to 1. See 
 [KB3154520](https://support.microsoft.com/kb/3154520) | Reliability Rollup HR-1605 -Support for TLS System Default Versions included in the .NET Framework 3.5 on Windows 8.1 and Windows Server 2012 R2
 [KB3156421](https://support.microsoft.com/kb/3156421) | 1605 Hotfix rollup 3154521 for the .NET Framework 4.5.2 and 4.5.1 on Windows
 
+The .NET framework version 3.5.1 and earlier versions did not provide support for applications to use Transport Layer Security (TLS) System Default Versions as a cryptographic protocol. This update enables the use of TLS v1.2 in the .NET Framework 3.5.1. Once we enable the SystemDefaultTlsVersions .NET registry key, a different behavior occurs for each version of Windows, as shown in the following table:
+
+Windows Version | SSL2 Client | SSL2 Server | SSL3 Client | SSL3 Server | TLS 1.0 Client | TLS 1.0 Server | TLS 1.1 Client | TLS 1.1 Server | TLS 1.2 Client | TLS 1.2 Server 
+--- | --- | --- | --- |--- |--- | --- | --- | --- |--- |--- 
+Windows Vista SP2 & Windows Server 2008 SP2 | Off | On | On | On | On | On | N/A | N/A | N/A | N/A |
+Windows 7 SP1 & Windows Server 2008 R2 SP1 | Off | On | On | On | On | On | Off | Off | Off | Off |
+Windows Server 2012 | Off | Off | On | On | On | On | On | On | On | On |
+Windows 8.1 and Windows Server 2012 R2 | Off | Off | On | On | On | On | On | On | On | On |
+Windows 10 | Off | Off | On | On | On | On | On | On | On | On |
+Windows 10 (1511) | Off | Off | On | On | On | On | On | On | On | On |
+Windows 10 (1607) and Windows Server 2016 | N/A | N/A | Off | Off | On | On | On | On | On | On |
+
 ### For WCF using .NET Framework 3.5 - 4.5.2 using TCP transport security with Certificate Credentials
 These versions of the WCF framework are hardcoded to use values SSL 3.0 and TLS 1.0. These values cannot be changed. We are supposed to update and retarget to NET Framework 4.6 or later versions to use TLS 1.1 and 1.2.
 
@@ -166,3 +178,5 @@ Following the fixes recommended in the section above, products should be regress
 If a product negotiates MTLS with a certificate from a non-standard location (outside of the standard named certificate stores in Windows), then that code may need updating to ensure the certificate is acquired correctly.
 3. Service interdependencies should be reviewed for trouble spots.  
 Any services which interoperate with 3rd-party services should conduct additional interop testing with those 3rd parties.
+
+[Supported Reference Link](https://docs.microsoft.com/en-us/dotnet/framework/network-programming/tls)
