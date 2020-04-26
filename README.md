@@ -83,9 +83,6 @@ Target .NET Framework 4.7 or later versions on our apps. Target .NET Framework 4
 Do not specify the TLS version. Configure our code to let the OS decide on the TLS version.
 Perform a thorough code audit to verify you're not specifying a TLS or SSL version.
 
-### For TCP sockets networking
-SslStream, using .NET Framework 4.7 and later versions, defaults to the OS choosing the best security protocol and version. To get the default OS best choice, if possible, don't use the method overloads of SslStream that take an explicit SslProtocols parameter. Otherwise, pass SslProtocols.None. We recommend that you don't use Default; setting SslProtocols.Default forces the use of SSL 3.0 /TLS 1.0 and prevents TLS 1.2.
-
 ### For WCF TCP transport using transport security with certificate credentials
 WCF uses the same networking stack as the rest of the .NET Framework.
 If you are targeting 4.7.1, WCF is configured to allow the OS to choose the best security protocol by default unless explicitly configured:
